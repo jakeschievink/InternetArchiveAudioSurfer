@@ -2,21 +2,25 @@ require 'rubygems'
 require 'trollop'
 require 'httparty'
 require 'pry'
+require "highline/import"
 require 'open-uri'
 
 params = Trollop::options do
   opt :query, "The search query", :type  => :string
   opt :rows, "", :type  => :int, :default => 15
   opt :file_dir, "", :type  => :string, :default => '/tmp/randarch.ogg'
+  opt :autoplay, "", :type  => :boolean, :default => true
 end
 def main params
   files = get_list_of_files params
-  chosen_file = files.sample["identifier"]
-  puts "Selected #{chosen_file}"
-  download_url = get_download_url(files.sample["identifier"])
-  download_file(params[:file_dir], download_url)
-  puts "Downloaded"
-  play = `mplayer #{params.file_dir}`
+  begin
+    chosen_file = files.sample["identifier"]
+    puts "Selected #{chosen_file}"
+    download_url = get_download_url(files.sample["identifier"])
+    download_file(params[:file_dir], download_url)
+    puts "Downloaded"
+    play = `mplayer #{params.file_dir}`
+  end until !params[:autoplay]
 end
 
 def get_list_of_files params
@@ -41,3 +45,4 @@ def download_file file_dir, url
 end
 
 main params
+
