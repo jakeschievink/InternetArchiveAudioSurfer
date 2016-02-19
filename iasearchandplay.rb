@@ -20,7 +20,8 @@ def main params
     download_file(params[:file_dir], download_url)
     puts "Downloaded"
     play = `mplayer #{params.file_dir}`
-  end until !params[:autoplay]
+    ans = ask "More?"
+  end until !params[:autoplay] || ans == "n"
 end
 
 def get_list_of_files params
