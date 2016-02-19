@@ -1,8 +1,15 @@
 require 'spec_helper'
 
-describe "Archive Autoplay" do
-  describe "#get_list_of_files" do
-    binding.pry
-   get_list_of_files().should == ""
+describe "#main" do
+  params = { query: "",
+                  rows: 10,
+                  file_dir: "/tmp/tmpy",
+                  autoplay: true}
+  
+  it "recieves and empty query" do
+    expect{ main params }.to output("Please add a search term:\n").to_stdout
+  end
+  context "No search query was given" do
+
   end
 end
