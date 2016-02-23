@@ -1,9 +1,5 @@
 require 'rubygems'
 require 'trollop'
-require 'httparty'
-require 'pry'
-require "highline/import"
-require 'open-uri'
 require_relative './main'
 
 params = Trollop::options do
