@@ -1,29 +1,48 @@
 require 'httparty'
 require 'pry'
 require 'audite'
+require 'ncurses'
 require "highline/import"
 require 'open-uri'
+require "curses"
+require 'stringio'
+  new_stderr = StringIO.new
+  new_stdout = StringIO.new
 
+    $stderr = new_stderr
+    $stdout = new_stdout
+include Curses
+init_screen
+
+@win = Window.new(10, 100,
+                   (lines - 10) / 2, (cols - 100) / 2)
 def main params
   system "clear"
   if params[:query] == ""
-    puts "Please add a search term:"
+    show_message("Please add a search term:", 2)
     return
   end
   files = get_list_of_files params
   begin
     chosen_file = files.sample["identifier"]
-    puts "Selected #{chosen_file}"
+    show_message("Selected #{chosen_file}",2)
     download_url = get_download_url(files.sample["identifier"])
-    puts "Downloading"
+    show_message("Downloading", 3)
     download_file(params[:file_dir]+chosen_file, download_url)
-    puts "Downloaded"
+    show_message("Downloaded",3)
     play_song params[:file_dir]+chosen_file
     ans = ask "More?"
   rescue URI::InvalidURIError => e 
     puts e 
     retry
-  end until !params[:autoplay] || ans == "n"
+  end until !params[:autoplay] || ans == "n" 
+end
+
+def show_message(message, line)
+  @win.box(?|, ?-)
+  @win.setpos(line, 3)
+  @win.addstr(message)
+  @win.refresh
 end
 
 def play_song file
@@ -35,8 +54,8 @@ def play_song file
   end
 
   player.events.on(:position_change) do |pos|
-    system "clear"
-    print "PLAYING #{player.current_song_name}: #{print_duration(pos, length_of_song)} #{pos.round}\r"
+    show_message("PLAYING #{player.current_song_name}",2)
+    show_message("#{print_duration(pos, length_of_song)} #{pos.round}\r",3)
   end
 
   player.load(file)
