@@ -6,16 +6,21 @@ require "highline/import"
 require 'open-uri'
 require "curses"
 require 'stringio'
-  new_stderr = StringIO.new
-  new_stdout = StringIO.new
+require 'io/console'
 
-    $stderr = new_stderr
-    $stdout = new_stdout
+new_stderr = StringIO.new
+new_stdout = StringIO.new
+$stderr = new_stderr
+$stdout = new_stdout
+
 include Curses
 init_screen
+curs_set(0)
 
-@win = Window.new(10, 100,
-                   (lines - 10) / 2, (cols - 100) / 2)
+def win 
+  @win ||= Window.new(10, 90, (lines - 10) / 2, (cols - 90) / 2)
+end
+
 def main params
   system "clear"
   if params[:query] == ""
@@ -25,37 +30,38 @@ def main params
   files = get_list_of_files params
   begin
     chosen_file = files.sample["identifier"]
-    show_message("Selected #{chosen_file}",2)
+    show_message("Selected #{chosen_file}", 3)
     download_url = get_download_url(files.sample["identifier"])
-    show_message("Downloading", 3)
+    show_message("Downloading", 5)
     download_file(params[:file_dir]+chosen_file, download_url)
-    show_message("Downloaded",3)
+    show_message("Downloaded", 5)
     play_song params[:file_dir]+chosen_file
-    ans = ask "More?"
+    win.clear()
   rescue URI::InvalidURIError => e 
-    puts e 
+    show_message(e, 1) 
     retry
-  end until !params[:autoplay] || ans == "n" 
+  end until !params[:autoplay]
 end
 
 def show_message(message, line)
-  @win.box(?|, ?-)
-  @win.setpos(line, 3)
-  @win.addstr(message)
-  @win.refresh
+  win.box(?|, ?-)
+  win.setpos(line, 3)
+  win.addstr(message)
+  win.refresh
 end
 
 def play_song file
   player ||= Audite.new
+  win.clear()
   length_of_song = 0
+
   player.events.on(:complete) do
-    puts "COMPLETE"
-  player.thread.exit
+    player.thread.exit
   end
 
   player.events.on(:position_change) do |pos|
-    show_message("PLAYING #{player.current_song_name}",2)
-    show_message("#{print_duration(pos, length_of_song)} #{pos.round}\r",3)
+    show_message("PLAYING #{player.current_song_name}", 3)
+    show_message("#{print_duration(pos, length_of_song)} #{pos.round}\r", 5)
   end
 
   player.load(file)
@@ -67,7 +73,7 @@ end
 def print_duration min, max 
   total_length=80
   filled_amount = "#" * ((min/max)*total_length).round
-  empty = " " * (total_length - filled_amount.length)
+  empty = "-" * (total_length - filled_amount.length)
   end_string = "[#{filled_amount + empty}]"
   return end_string
 end
